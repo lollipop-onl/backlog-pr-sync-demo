@@ -1,0 +1,90 @@
+name: Sync PR Lifecycle to Backlog Issues
+on:
+  pull_request:
+    types: [opened, edited, closed]
+    branches: [main]
+
+# リポジトリへの書き込みは不要なので全権限を無効化
+permissions: {}
+
+env:
+  BACKLOG_API_KEY: ${{ secrets.BACKLOG_API_KEY }}
+  BACKLOG_SPACE: ${{ secrets.BACKLOG_SPACE }}
+  # 「処理中」ステータスの ID（bee status list -p <PROJECT> で確認）
+  STATUS_IN_PROGRESS: "2"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # PR 本文から課題キーを抽出する
+      # edited イベントでは変更前の本文からもキーを取得して差分を計算する
+      - name: Collect issue keys from PR body
+        id: collect
+        run: |
+          KEYS=$(echo "$PR_BODY" | grep -oE '[A-Z_]+-[0-9]+' | sort -u | tr '\n' ' ')
+          echo "Detected issue keys: ${KEYS:-(none)}"
+          echo "keys=$KEYS" >> "$GITHUB_OUTPUT"
+
+          if [ "$EVENT_ACTION" = "edited" ]; then
+            PREV=$(echo "$PREV_BODY" | grep -oE '[A-Z_]+-[0-9]+' | sort -u | tr '\n' ' ')
+            echo "Previous issue keys: ${PREV:-(none)}"
+            echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PREV_BODY: ${{ github.event.changes.body.from }}
+          EVENT_ACTION: ${{ github.event.action }}
+
+      - name: Build PR link text
+        id: pr-link
+        run: |
+          echo "md=[${REPO}#${PR_NUMBER}](${PR_URL})" >> "$GITHUB_OUTPUT"
+        env:
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+      # PR 作成 → 課題にリンク＋ステータスを「処理中」に
+      - name: Update status to "In Progress" and comment PR link
+        if: github.event.action == 'opened' && steps.collect.outputs.keys != ''
+        run: |
+          for KEY in $KEYS; do
+            npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
+              || echo "::warning::Failed to process $KEY"
+            npx @nulab/bee@1 issue comment "$KEY" \
+              --body "PR ${PR_LINK} が作成されました" || echo "::warning::Failed to process $KEY"
+          done
+        env:
+          KEYS: ${{ steps.collect.outputs.keys }}
+          PR_LINK: ${{ steps.pr-link.outputs.md }}
+
+      # PR 本文の編集 → 新しく追加された課題キーにだけコメント
+      - name: Comment PR link on newly added issues
+        if: github.event.action == 'edited' && steps.collect.outputs.keys != ''
+        run: |
+          for KEY in $KEYS; do
+            if echo "$PREV_KEYS" | grep -qw "$KEY"; then
+              echo "Skipping: $KEY (already linked)"
+              continue
+            fi
+            npx @nulab/bee@1 issue comment "$KEY" \
+              --body "PR ${PR_LINK} にリンクされました" || echo "::warning::Failed to process $KEY"
+          done
+        env:
+          KEYS: ${{ steps.collect.outputs.keys }}
+          PREV_KEYS: ${{ steps.collect.outputs.prev }}
+          PR_LINK: ${{ steps.pr-link.outputs.md }}
+
+      # PR マージ → 課題をクローズ
+      - name: Close linked issues
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.collect.outputs.keys != ''
+        run: |
+          for KEY in $KEYS; do
+            npx @nulab/bee@1 issue close "$KEY" \
+              --comment "PR ${PR_LINK} のマージにより自動クローズ" || echo "::warning::Failed to process $KEY"
+          done
+        env:
+          KEYS: ${{ steps.collect.outputs.keys }}
+          PR_LINK: ${{ steps.pr-link.outputs.md }}
