@@ -13,3 +13,7 @@ test('next クエリがなければログイン画面に留まる', () => {
 test('外部ホストへのリダイレクトは受け付けない', () => {
   assert.equal(resolveRedirectPath({ next: 'https://example.com' }), '/login');
 });
+
+test('プロトコル相対 URL は外部ホストとして拒否する', () => {
+  assert.equal(resolveRedirectPath({ next: '//example.com' }), '/login');
+});
