@@ -5,5 +5,12 @@ export function resolveRedirectPath(query) {
   if (typeof next !== 'string' || !next.startsWith('/') || next.startsWith('//')) {
     return DEFAULT_PATH;
   }
-  return next;
+  return normalizeTrailingSlash(next);
+}
+
+function normalizeTrailingSlash(path) {
+  if (path === '/') {
+    return path;
+  }
+  return path.replace(/\/+$/, '');
 }
