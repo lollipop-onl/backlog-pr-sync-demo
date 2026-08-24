@@ -26,6 +26,11 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
 
+      # 後続のステップで bee コマンドを使えるようにする
+      - name: Install bee CLI
+        if: steps.issue.outputs.key != ''
+        run: npm install -g @nulab/bee@1
+
       # コメント本文に埋め込む PR へのリンク（ラベルは org/repo#number）
       - name: Build PR link text
         id: pr-link
@@ -41,7 +46,7 @@ jobs:
       - name: Link issue to the opened PR
         if: steps.issue.outputs.key != '' && github.event.action == 'opened'
         run: |
-          npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
+          bee issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
             --comment "GitHub プルリクエスト $PR_LINK とリンクしました（$HEAD → $BASE）"
         env:
           KEY: ${{ steps.issue.outputs.key }}
@@ -55,7 +60,7 @@ jobs:
       - name: Mark issue as in progress again on PR reopen
         if: steps.issue.outputs.key != '' && github.event.action == 'reopened'
         run: |
-          npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
+          bee issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
             --comment "GitHub プルリクエスト $PR_LINK が再オープンされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
@@ -65,7 +70,7 @@ jobs:
       - name: Close issue on merge
         if: steps.issue.outputs.key != '' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
-          npx @nulab/bee@1 issue close "$KEY" \
+          bee issue close "$KEY" \
             --comment "GitHub プルリクエスト $PR_LINK が $BASE にマージされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
@@ -76,7 +81,7 @@ jobs:
       - name: Note that the PR was closed without merging
         if: steps.issue.outputs.key != '' && github.event.action == 'closed' && github.event.pull_request.merged == false
         run: |
-          npx @nulab/bee@1 issue comment "$KEY" \
+          bee issue comment "$KEY" \
             --body "GitHub プルリクエスト $PR_LINK はマージされずにクローズされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
