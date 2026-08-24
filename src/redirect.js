@@ -12,5 +12,7 @@ function normalizeTrailingSlash(path) {
   if (path === '/') {
     return path;
   }
-  return path.replace(/\/+$/, '');
+  const [pathname, search] = path.split('?', 2);
+  const normalized = pathname.replace(/\/+$/, '');
+  return search ? `${normalized}?${search}` : normalized;
 }
