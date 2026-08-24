@@ -1,8 +1,8 @@
-const HOME_PATH = '/';
+const DEFAULT_HOME = '/';
 
 export function resolveLogoutRedirectPath(session) {
   if (session?.returnTo && session.returnTo.startsWith('/')) {
     return session.returnTo;
   }
-  return HOME_PATH;
+  return DEFAULT_HOME;
 }
