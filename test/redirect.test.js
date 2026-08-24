@@ -29,3 +29,7 @@ test('ルートパスの単独スラッシュは保持される', () => {
 test('クエリ付きパスでも末尾スラッシュが除去される', () => {
   assert.equal(resolveRedirectPath({ next: '/items/?page=2' }), '/items?page=2');
 });
+
+test('エンコード済みのパスもそのまま扱える', () => {
+  assert.equal(resolveRedirectPath({ next: '/docs/%E4%BB%95%E6%A7%98' }), '/docs/%E4%BB%95%E6%A7%98');
+});
