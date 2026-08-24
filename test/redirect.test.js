@@ -25,3 +25,7 @@ test('末尾のスラッシュは除去される', () => {
 test('ルートパスの単独スラッシュは保持される', () => {
   assert.equal(resolveRedirectPath({ next: '/' }), '/');
 });
+
+test('クエリ付きパスでも末尾スラッシュが除去される', () => {
+  assert.equal(resolveRedirectPath({ next: '/items/?page=2' }), '/items?page=2');
+});
