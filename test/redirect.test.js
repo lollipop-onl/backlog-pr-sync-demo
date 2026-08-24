@@ -17,3 +17,11 @@ test('外部ホストへのリダイレクトは受け付けない', () => {
 test('プロトコル相対 URL は外部ホストとして拒否する', () => {
   assert.equal(resolveRedirectPath({ next: '//example.com' }), '/login');
 });
+
+test('末尾のスラッシュは除去される', () => {
+  assert.equal(resolveRedirectPath({ next: '/dashboard/' }), '/dashboard');
+});
+
+test('ルートパスの単独スラッシュは保持される', () => {
+  assert.equal(resolveRedirectPath({ next: '/' }), '/');
+});
