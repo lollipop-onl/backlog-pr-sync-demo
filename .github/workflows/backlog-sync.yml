@@ -41,9 +41,8 @@ jobs:
       - name: Link issue to the opened PR
         if: steps.issue.outputs.key != '' && github.event.action == 'opened'
         run: |
-          npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS"
-          npx @nulab/bee@1 issue comment "$KEY" \
-            --body "プルリクエスト $PR_LINK とリンクしました（$HEAD → $BASE）"
+          npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
+            --comment "プルリクエスト $PR_LINK とリンクしました（$HEAD → $BASE）"
         env:
           KEY: ${{ steps.issue.outputs.key }}
           PR_LINK: ${{ steps.pr-link.outputs.md }}
@@ -52,12 +51,12 @@ jobs:
 
       # PR 再オープン → レビュー再開なので課題も処理中に戻す
       # 完了済みでも edit --status で処理中に直接遷移できるため reopen は挟まない
+      # ステータスが変わらない場合、コメントを伴わない edit は API に拒否されるので --comment で一括更新する
       - name: Mark issue as in progress again on PR reopen
         if: steps.issue.outputs.key != '' && github.event.action == 'reopened'
         run: |
-          npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS"
-          npx @nulab/bee@1 issue comment "$KEY" \
-            --body "プルリクエスト $PR_LINK が再オープンされました"
+          npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
+            --comment "プルリクエスト $PR_LINK が再オープンされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
           PR_LINK: ${{ steps.pr-link.outputs.md }}
