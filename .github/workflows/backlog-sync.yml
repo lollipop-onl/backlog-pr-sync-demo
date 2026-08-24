@@ -42,7 +42,7 @@ jobs:
         if: steps.issue.outputs.key != '' && github.event.action == 'opened'
         run: |
           npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
-            --comment "プルリクエスト $PR_LINK とリンクしました（$HEAD → $BASE）"
+            --comment "GitHub プルリクエスト $PR_LINK とリンクしました（$HEAD → $BASE）"
         env:
           KEY: ${{ steps.issue.outputs.key }}
           PR_LINK: ${{ steps.pr-link.outputs.md }}
@@ -56,7 +56,7 @@ jobs:
         if: steps.issue.outputs.key != '' && github.event.action == 'reopened'
         run: |
           npx @nulab/bee@1 issue edit "$KEY" --status "$STATUS_IN_PROGRESS" \
-            --comment "プルリクエスト $PR_LINK が再オープンされました"
+            --comment "GitHub プルリクエスト $PR_LINK が再オープンされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
           PR_LINK: ${{ steps.pr-link.outputs.md }}
@@ -66,7 +66,7 @@ jobs:
         if: steps.issue.outputs.key != '' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
           npx @nulab/bee@1 issue close "$KEY" \
-            --comment "プルリクエスト $PR_LINK が $BASE にマージされました"
+            --comment "GitHub プルリクエスト $PR_LINK が $BASE にマージされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
           PR_LINK: ${{ steps.pr-link.outputs.md }}
@@ -77,7 +77,7 @@ jobs:
         if: steps.issue.outputs.key != '' && github.event.action == 'closed' && github.event.pull_request.merged == false
         run: |
           npx @nulab/bee@1 issue comment "$KEY" \
-            --body "プルリクエスト $PR_LINK はマージされずにクローズされました"
+            --body "GitHub プルリクエスト $PR_LINK はマージされずにクローズされました"
         env:
           KEY: ${{ steps.issue.outputs.key }}
           PR_LINK: ${{ steps.pr-link.outputs.md }}
